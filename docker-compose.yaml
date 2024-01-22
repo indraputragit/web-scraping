@@ -1,0 +1,48 @@
+version: '3.7'
+services:
+    selenium:
+        image: selenium/standalone-chrome
+        volumes:
+          - /dev/shm:/dev/shm
+        ports:
+          - 4444:4444
+        networks:
+          - scrape_network 
+
+    postgres:
+        image: postgres:13
+        container_name: postgres
+        ports:
+          - 5432:5432
+        volumes:
+          - postgres-db-volume:/var/lib/postgresql/data
+        environment:
+          - POSTGRES_USER=${POSTGRES_USER}
+          - POSTGRES_PASS=${POSTGRES_PASS}
+          - POSTGRES_DBNM=${POSTGRES_DBNM}
+        restart: always
+        networks:
+          - scrape_network  
+
+    app:
+        build: .
+        command: python3 /code/main.py
+        volumes:
+          - .:/code
+        ports:
+          - 9090:9090
+        depends_on:
+          - postgres
+          - selenium
+        env_file:
+          - .env
+        links:
+          - postgres
+        networks:
+          - scrape_network
+
+volumes:
+    postgres-db-volume:
+
+networks:
+    scrape_network: 
